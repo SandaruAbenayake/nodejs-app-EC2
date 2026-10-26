@@ -30,5 +30,5 @@ jobs:
 
       - name: Start or restart app with pm2
         run: |
-          pm2 restart api --update-env || pm2 start index.js --name api
+          pm2 restart api --update-env || pm2 start server.js --name api
           pm2 save
