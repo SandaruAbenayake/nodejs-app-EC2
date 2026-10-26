@@ -11,21 +11,24 @@ jobs:
   build:
     runs-on: self-hosted
 
-    strategy:
-      matrix:
-        node-version: [24.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: "npm"
-      - run: npm ci
-      - run: npm run build --if-present
-      - run: pm2 restart api
-      - run: |
-          touch .env
-          echo "${{ secrets.MONGO_DB_URL }}" > .env
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create .env file
+        env:
+          MONGO_DB_URL: ${{ secrets.MONGO_DB_URL }}
+        run: |
+          printf 'MONGO_DB_URL=%s\n' "$MONGO_DB_URL" > .env
+          chmod 600 .env
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build (if present)
+        run: npm run build --if-present
+
+      - name: Start or restart app with pm2
+        run: |
+          pm2 restart api --update-env || pm2 start index.js --name api
+          pm2 save
